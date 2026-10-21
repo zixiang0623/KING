@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>INMU KING カウンター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
+<style>
+/* Hallmark · genre: modern-minimal · macrostructure: Stat-Led · theme: custom (warm paper + signal green)
+ * enrichment: none (typography only) · nav: N9 edge-aligned · footer: Ft2 inline
+ * motion: number-tick · sheet spring (damping 1.0) · pulse-once
+ * apple-design: instant press feedback · interruptible springs · velocity handoff · momentum projection · rubber-banding · translucent sheet · reduced-motion/transparency/contrast
+ * pre-emit critique: P4 H5 E4 S4 R4 V3 */
+
+/* ───────── Tokens (all colour / type / space / motion values live here) ───────── */
+:root {
+  color-scheme: light dark;
+
+  --font-display: "Geist", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", ui-sans-serif, sans-serif;
+  --font-body:    "Geist", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", ui-sans-serif, sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-paper:      oklch(97.5% 0.008 85);
+  --color-paper-2:    oklch(94.5% 0.010 85);
+  --color-rule:       oklch(86%   0.010 85);
+  --color-line:       oklch(58%   0.012 80);
+  --color-neutral:    oklch(66%   0.010 80);
+  --color-muted:      oklch(42%   0.012 75);
+  --color-ink:        oklch(19%   0.012 60);
+  --color-accent:     oklch(62%   0.15  165);
+  --color-accent-ink: oklch(45%   0.12  165);
+  --color-error:      oklch(50%   0.19  27);
+  --color-warn:       oklch(48%   0.12  70);
+  --color-focus:      oklch(48%   0.14  165);
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper:      oklch(15%   0.010 85);
+    --color-paper-2:    oklch(19.5% 0.012 85);
+    --color-rule:       oklch(29%   0.010 85);
+    --color-line:       oklch(56%   0.012 80);
+    --color-neutral:    oklch(48%   0.010 80);
+    --color-muted:      oklch(75%   0.010 80);
+    --color-ink:        oklch(94%   0.008 85);
+    --color-accent:     oklch(74%   0.14  165);
+    --color-accent-ink: oklch(79%   0.13  165);
+    --color-error:      oklch(73%   0.16  27);
+    --color-warn:       oklch(79%   0.13  80);
+    --color-focus:      oklch(79%   0.13  165);
+  }
+}
+
+/* ───────── Base ───────── */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  min-height: 100dvh;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+a { color: inherit; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wrap { width: min(100% - 2 * var(--gutter), 72rem); margin-inline: auto; }
+.tnum { font-variant-numeric: tabular-nums; }
+svg.i { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ───────── Reveal (one orchestrated page-load moment) ───────── */
+.reveal { opacity: 0; transform: translateY(8px); animation: reveal var(--dur-long) var(--ease-out) forwards; animation-delay: calc(var(--i, 0) * 60ms); }
+@keyframes reveal { to { opacity: 1; transform: none; } }
+
+/* ───────── Top bar ───────── */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); min-height: 4rem; }
+.wordmark { font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.01em; white-space: nowrap; }
+.wordmark span { font-weight: 500; color: var(--color-muted); margin-left: 0.35em; }
+.bar-actions { display: flex; align-items: center; gap: var(--space-xs); margin-right: -0.5rem; }
+
+.ibtn {
+  position: relative; display: inline-grid; place-items: center;
+  width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md);
+  color: var(--color-ink);
+  transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+}
+.ibtn:active { transform: scale(0.94); }
+.ibtn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.ibtn[data-state="loading"] svg { animation: spin 0.9s linear infinite; }
+.ibtn[data-state="error"] { color: var(--color-error); }
+.ibtn[data-state="success"] { color: var(--color-accent-ink); }
+@media (hover: hover) and (pointer: fine) { .ibtn:not([disabled]):hover { background: var(--color-paper-2); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ───────── Hero (Stat-Led) ───────── */
+.hero { padding-block: clamp(1.5rem, 7vh, 4.5rem) clamp(2rem, 6vh, 3.5rem); }
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); font-family: var(--font-mono); font-weight: 500; font-size: 0.8125rem; line-height: 1.4; color: var(--color-muted); margin-bottom: var(--space-lg); }
+.chip { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; letter-spacing: 0.04em; color: var(--color-ink); }
+.dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--color-neutral); flex: none; }
+.chip[data-status="live"] .dot, .chip[data-status="demo"] .dot { background: var(--color-accent); }
+.chip[data-status="loading"] .dot { background: var(--color-muted); }
+.chip[data-status="retry"] .dot { background: var(--color-warn); }
+.chip[data-status="paused"] .dot { background: var(--color-error); }
+
+.headline { font-weight: 600; }
+.lede, .tail { display: block; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.125rem, 2.2vw, 1.5rem); line-height: 1.35; letter-spacing: -0.01em; overflow-wrap: anywhere; min-width: 0; }
+.lede { margin-bottom: 0.15em; }
+.tail { margin-top: 0.4rem; color: var(--color-muted); }
+.figure {
+  --cell: 0.56em; --comma: 0.3em; --lh: 1.2em;
+  display: flex; align-items: flex-end;
+  font-family: var(--font-mono); font-weight: 600; font-style: normal;
+  font-size: clamp(2.5rem, 13vw, 12rem); line-height: 1; letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  min-height: var(--lh);
+}
+.d {
+  display: inline-block; position: relative; flex: none;
+  width: var(--cell); height: var(--lh); overflow: hidden; text-align: center; line-height: var(--lh);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, var(--color-ink) 18%, var(--color-ink) 82%, transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, var(--color-ink) 18%, var(--color-ink) 82%, transparent 100%);
+  transition: opacity var(--dur-short) var(--ease-out);
+}
+.d.is-lead { opacity: 0.18; }
+.d.ph { color: var(--color-rule); }
+.reel { display: block; }
+.reel i { display: block; height: var(--lh); line-height: var(--lh); font-style: normal; }
+.c { display: inline-block; flex: none; width: var(--comma); height: var(--lh); line-height: var(--lh); text-align: center; color: var(--color-neutral); }
+
+.qual { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); font-size: 0.9375rem; color: var(--color-muted); }
+.qual b { font-family: var(--font-mono); font-weight: 600; color: var(--color-ink); letter-spacing: -0.01em; }
+
+.cta-row { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-md); }
+.cta-hint { font-size: 0.875rem; color: var(--color-muted); }
+.cta-hint code { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-ink); }
+
+.notice { margin-top: var(--space-lg); display: flex; gap: var(--space-md); align-items: flex-start; padding: var(--space-md); border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-paper-2); max-width: 44rem; }
+.notice svg.i { margin-top: 0.15rem; color: var(--color-error); }
+.notice[data-kind="warn"] svg.i { color: var(--color-warn); }
+.notice p { font-size: 0.9375rem; line-height: 1.6; }
+.notice-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-sm); }
+
+/* ───────── Buttons ───────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 2.75rem; padding-inline: 1.25rem; border-radius: 999px; border: 1px solid transparent;
+  font-family: var(--font-body); font-weight: 600; font-size: 0.9375rem; line-height: 1; white-space: nowrap;
+  transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+}
+.btn:active { transform: scale(0.97); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--color-ink); color: var(--color-paper); }
+.btn-quiet { background: transparent; border-color: var(--color-line); color: var(--color-ink); }
+.btn-text { background: transparent; color: var(--color-muted); padding-inline: 0.75rem; }
+.btn[data-state="loading"] { cursor: progress; }
+.btn[data-state="error"] { background: var(--color-paper); border-color: var(--color-error); color: var(--color-error); }
+.btn[data-state="success"] { background: var(--color-accent-ink); color: var(--color-paper); }
+.btn .spin { animation: spin 0.9s linear infinite; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:not([disabled]):hover { background: color-mix(in oklch, var(--color-ink) 82%, var(--color-paper)); }
+  .btn-quiet:not([disabled]):hover { background: var(--color-paper-2); }
+  .btn-text:not([disabled]):hover { color: var(--color-ink); background: var(--color-paper-2); }
+}
+
+/* ───────── Supporting stats ───────── */
+.section { padding-block: var(--space-xl); border-top: 1px solid var(--color-rule); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-xl) var(--space-lg); }
+.stat dt { font-size: 0.8125rem; font-weight: 500; color: var(--color-muted); }
+.stat dd { margin: 0; }
+.stat .v { display: block; margin-top: 0.35rem; font-family: var(--font-mono); font-weight: 600; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat .v.pos { color: var(--color-accent-ink); }
+.stat .n { display: block; margin-top: 0.25rem; font-size: 0.8125rem; color: var(--color-muted); }
+
+h2.sh { font-family: var(--font-display); font-weight: 600; font-size: 1.125rem; letter-spacing: -0.01em; line-height: 1.3; }
+.trace-wrap { margin-top: var(--space-md); }
+.trace { display: block; width: 100%; height: 7rem; }
+.trace-base { stroke: var(--color-rule); stroke-width: 1; }
+.trace-line { fill: none; stroke: var(--color-accent-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trace-dot { fill: var(--color-accent-ink); }
+.trace-cap { margin-top: var(--space-sm); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs) var(--space-md); font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
+.trace-empty { padding-block: var(--space-lg); font-size: 0.9375rem; color: var(--color-muted); }
+
+.video { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-md); align-items: start; }
+.video img { display: block; width: 100%; max-width: 20rem; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-sm); background: var(--color-paper-2); }
+.video h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.video h3 a { text-decoration: none; }
+.video p { margin-top: 0.25rem; font-size: 0.9375rem; color: var(--color-muted); }
+.video .open { margin-top: var(--space-md); }
+.video .ph-box { aspect-ratio: 16 / 9; max-width: 20rem; border-radius: var(--radius-sm); background: var(--color-paper-2); }
+@media (min-width: 40rem) { .video { grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: var(--space-xl); } }
+@media (hover: hover) and (pointer: fine) { .video h3 a:hover { text-decoration: underline; text-underline-offset: 0.2em; } }
+
+.foot { border-top: 1px solid var(--color-rule); padding-block: var(--space-lg); font-size: 0.8125rem; color: var(--color-muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs) var(--space-lg); }
+
+/* ───────── Progress (functional, linear) ───────── */
+.progress { height: 2px; background: var(--color-rule); overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--color-accent); transform: scaleX(0); transform-origin: left center; }
+
+/* ───────── Settings sheet ───────── */
+.sheet-root { --p: 0; --dy: 0; position: fixed; inset: 0; z-index: 10; }
+.scrim { position: absolute; inset: 0; background: color-mix(in oklch, var(--color-ink) 12%, transparent); opacity: clamp(0, var(--p), 1); }
+.sheet {
+  position: absolute; display: flex; flex-direction: column;
+  top: calc(env(safe-area-inset-top, 0px) + 4rem); right: var(--gutter);
+  width: min(27rem, 100% - 2 * var(--gutter));
+  max-height: calc(100dvh - 5rem - env(safe-area-inset-top, 0px));
+  overflow: auto; overscroll-behavior: contain;
+  background: color-mix(in oklch, var(--color-paper) 80%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--color-rule);
+  border-top-color: color-mix(in oklch, var(--color-paper) 40%, var(--color-rule));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 48px -16px color-mix(in oklch, var(--color-ink) 22%, transparent), 0 2px 6px color-mix(in oklch, var(--color-ink) 8%, transparent);
+  transform-origin: top right;
+  transform: translateY(calc((1 - var(--p)) * -8px)) scale(calc(0.96 + 0.04 * var(--p)));
+  opacity: clamp(0, var(--p), 1);
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-md) var(--space-md) 0 var(--space-lg); }
+.sheet-head h2 { font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
+.grip { display: none; }
+.sheet form { display: grid; gap: var(--space-lg); padding: var(--space-md) var(--space-lg) var(--space-lg); }
+.field { display: grid; gap: var(--space-sm); border: 0; padding: 0; min-width: 0; }
+.field legend, .field > label.lab { font-weight: 600; font-size: 0.9375rem; padding: 0; }
+.help { font-size: 0.8125rem; line-height: 1.55; color: var(--color-muted); }
+.help.err { color: var(--color-error); }
+.input-wrap { position: relative; }
+.input {
+  width: 100%; min-height: 2.75rem; padding: 0.625rem 3rem 0.625rem 0.875rem;
+  background: var(--color-paper); color: var(--color-ink);
+  border: 1px solid var(--color-line); border-radius: var(--radius-md);
+  font-family: var(--font-mono); font-weight: 500; font-size: 0.9375rem;
+  transition: border-color var(--dur-micro) var(--ease-out);
+}
+.input::placeholder { color: var(--color-muted); font-family: var(--font-body); font-weight: 400; }
+.input:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-md); border-color: var(--color-focus); }
+.input[aria-invalid="true"] { border-color: var(--color-error); }
+.input[disabled] { opacity: 0.5; cursor: not-allowed; }
+.eye { position: absolute; top: 0; right: 0; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: var(--radius-md); color: var(--color-muted); transition: transform var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.eye:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) { .eye:hover { color: var(--color-ink); } }
+.check { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; font-size: 0.9375rem; cursor: pointer; }
+.check input { width: 1.25rem; height: 1.25rem; accent-color: var(--color-ink); flex: none; }
+.interval-row { display: grid; gap: var(--space-sm); }
+.input-wrap.num { max-width: 10rem; }
+.input[type="number"] { padding-right: 2.75rem; -moz-appearance: textfield; appearance: textfield; font-variant-numeric: tabular-nums; }
+.input[type="number"]::-webkit-outer-spin-button, .input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.unit { position: absolute; top: 0; right: 0.875rem; height: 2.75rem; display: grid; place-items: center; font-size: 0.875rem; color: var(--color-muted); pointer-events: none; }
+.presets { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.pre { min-width: 2.75rem; min-height: 2.75rem; padding-inline: 0.75rem; border: 1px solid var(--color-line); border-radius: 999px; font-family: var(--font-mono); font-weight: 500; font-size: 0.875rem; transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.pre:active { transform: scale(0.95); }
+.pre[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
+@media (hover: hover) and (pointer: fine) { .pre[aria-pressed="false"]:hover { background: var(--color-paper-2); } }
+.help.warn { color: var(--color-warn); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+
+/* mobile: bottom sheet that follows the finger */
+@media (max-width: 39.9375rem) {
+  .scrim { background: color-mix(in oklch, var(--color-ink) 30%, transparent); }
+  .sheet {
+    top: auto; right: 0; left: 0; bottom: 0; width: auto;
+    max-height: 92dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transform-origin: bottom center;
+    transform: translateY(calc((1 - var(--p)) * 100% + var(--dy) * 1px));
+    opacity: 1;
+  }
+  .sheet-head { touch-action: none; cursor: grab; padding-top: var(--space-lg); position: relative; }
+  .grip { display: block; position: absolute; top: 0.5rem; left: 50%; width: 2.25rem; height: 0.25rem; margin-left: -1.125rem; border-radius: 999px; background: var(--color-line); }
+}
+
+/* ───────── Accessibility preferences ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: reveal-reduced 150ms linear forwards; animation-delay: 0ms; transform: none; }
+  @keyframes reveal-reduced { to { opacity: 1; } }
+  .sheet { transform: none !important; opacity: clamp(0, var(--p), 1) !important; }
+  .ibtn[data-state="loading"] svg, .btn .spin { animation-duration: 2.4s; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sheet { background: var(--color-paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .sheet, .notice { border-color: var(--color-ink); background: var(--color-paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .section, .foot { border-color: var(--color-line); }
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:1rem">このツールは JavaScript が必要です。</p></noscript>
+
+<div id="app">
+  <div class="wrap">
+    <header class="bar reveal" style="--i:0">
+      <div class="wordmark">INMU KING<span>カウンター</span></div>
+      <div class="bar-actions">
+        <button class="ibtn" id="refreshBtn" type="button" aria-label="今すぐ更新" title="今すぐ更新">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+        </button>
+        <button class="ibtn" id="settingsBtn" type="button" aria-label="設定を開く" title="設定" aria-haspopup="dialog">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+
+    <main>
+      <section class="hero" id="heroFit" aria-live="off">
+        <div class="status reveal" style="--i:1">
+          <span class="chip" id="chip" data-status="idle"><span class="dot" id="dot"></span><span id="chipText">未設定</span></span>
+          <span id="updated" class="tnum"></span>
+        </div>
+
+        <h1 class="headline">
+          <span class="lede reveal" style="--i:2">INMU KING は、いま</span>
+          <span class="figure reveal" style="--i:3" id="figure" role="img" aria-label="再生回数は未取得です"></span>
+          <span class="tail reveal" style="--i:4" id="tail"></span>
+        </h1>
+
+        <p class="qual reveal" style="--i:5" id="qual" hidden></p>
+
+        <div class="cta-row reveal" style="--i:5" id="cta" hidden>
+          <button class="btn btn-primary" id="ctaBtn" type="button">APIキーを設定</button>
+          <span class="cta-hint">または、このファイルの <code>CONFIG.API_KEY</code> に直接貼り付けます。</span>
+        </div>
+
+        <div class="notice" id="notice" hidden>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
+          <div>
+            <p id="noticeText" role="alert"></p>
+            <div class="notice-actions" id="noticeActions"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal" style="--i:6" aria-label="再生回数の内訳">
+        <dl class="stats">
+          <div class="stat"><dt>前回の取得から</dt><dd><span class="v" id="sDelta">—</span><span class="n" id="sDeltaN">取得を待っています</span></dd></div>
+          <div class="stat"><dt>1分あたりのペース</dt><dd><span class="v" id="sPace">—</span><span class="n" id="sPaceN">2回目の取得から計測</span></dd></div>
+          <div class="stat"><dt>開いてからの増加</dt><dd><span class="v" id="sSession">—</span><span class="n">このページを開いた時点との差</span></dd></div>
+          <div class="stat"><dt>高評価</dt><dd><span class="v" id="sLikes">—</span></dd></div>
+          <div class="stat"><dt>コメント</dt><dd><span class="v" id="sComments">—</span></dd></div>
+        </dl>
+      </section>
+
+      <section class="section reveal" style="--i:7" aria-labelledby="traceH">
+        <h2 class="sh" id="traceH">取得値の推移</h2>
+        <div class="trace-wrap" id="traceWrap">
+          <p class="trace-empty" id="traceEmpty">2回取得できた時点から、このページを開いてからの推移を描きます。</p>
+          <svg class="trace" id="trace" aria-hidden="true" hidden></svg>
+          <div class="trace-cap tnum" id="traceCap" hidden></div>
+        </div>
+      </section>
+
+      <section class="section reveal" style="--i:8" aria-labelledby="videoH">
+        <h2 class="sh" id="videoH">対象の動画</h2>
+        <div class="video" id="video">
+          <div class="ph-box" id="thumbBox"></div>
+          <div>
+            <h3 id="vTitle">取得すると表示されます</h3>
+            <p id="vMeta"></p>
+            <a class="btn btn-quiet open" id="vLink" target="_blank" rel="noopener noreferrer">
+              YouTube で開く
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span id="footL">YouTube Data API v3 のデータを表示しています。</span>
+      <span>キーはこのブラウザと Google の API の間でだけ使われます。</span>
+    </footer>
+  </div>
+</div>
+
+<div class="sheet-root" id="sheetRoot" hidden>
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head" id="sheetHead">
+      <span class="grip" aria-hidden="true"></span>
+      <h2 id="sheetTitle">設定</h2>
+      <button class="ibtn" id="closeBtn" type="button" aria-label="閉じる">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <form id="form" novalidate>
+      <div class="field">
+        <label class="lab" for="keyInput">YouTube Data API キー</label>
+        <div class="input-wrap">
+          <input class="input" id="keyInput" name="apikey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" aria-describedby="keyHelp">
+          <button class="eye" id="eyeBtn" type="button" aria-label="キーを表示" aria-pressed="false">
+            <svg class="i" id="eyeOn" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="i" id="eyeOff" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 6.1A10.6 10.6 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-3.2 3.9"/><path d="M6.6 6.7A16.6 16.6 0 0 0 2 12s3.6 6 10 6a10 10 0 0 0 4.1-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+          </button>
+        </div>
+        <p class="help" id="keyHelp">Google Cloud Console で YouTube Data API v3 を有効にして発行したキーを貼り付けます。</p>
+        <label class="check"><input type="checkbox" id="rememberChk" checked> このブラウザに保存する</label>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="intervalInput">更新間隔</label>
+        <div class="interval-row">
+          <div class="input-wrap num">
+            <input class="input" id="intervalInput" name="interval" type="number" inputmode="numeric" min="1" max="3600" step="1" aria-describedby="quotaHelp">
+            <span class="unit" aria-hidden="true">秒</span>
+          </div>
+          <div class="presets" role="group" aria-label="よく使う間隔">
+            <button class="pre" type="button" data-sec="5" aria-pressed="false">5</button>
+            <button class="pre" type="button" data-sec="10" aria-pressed="false">10</button>
+            <button class="pre" type="button" data-sec="20" aria-pressed="false">20</button>
+            <button class="pre" type="button" data-sec="30" aria-pressed="false">30</button>
+            <button class="pre" type="button" data-sec="60" aria-pressed="false">60</button>
+          </div>
+        </div>
+        <p class="help" id="quotaHelp"></p>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="saveBtn" type="submit" data-state="default">保存して開始</button>
+        <button class="btn btn-text" id="clearBtn" type="button">キーを削除</button>
+      </div>
+      <p class="help" id="formMsg" role="status" aria-live="polite" hidden></p>
+    </form>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ═════════ 設定 ═════════
+   API_KEY: ここに直接貼り付けてもOKです(空なら画面右上の設定から入力)。 */
+const CONFIG = {
+  VIDEO_ID: "MFwtpM21wWc",
+  API_KEY: "",
+  INTERVAL_SEC: 20,
+};
+
+const MIN_SEC = 1, MAX_SEC = 3600;
+const validSec = (n) => Number.isInteger(n) && n >= MIN_SEC && n <= MAX_SEC;
+const DEMO = location.hash === "#demo";   // #demo を付けて開くと、API なしで表示確認ができます
+const nf = new Intl.NumberFormat("ja-JP");
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+const mobileSheet = matchMedia("(max-width: 39.9375rem)");
+const fmtTime = (t) => new Date(t).toLocaleTimeString("ja-JP", { hour12: false });
+
+const store = {
+  get(k) { try { return localStorage.getItem("inmuKing." + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem("inmuKing." + k, v); } catch { /* 保存できない環境では無視 */ } },
+  del(k) { try { localStorage.removeItem("inmuKing." + k); } catch { /* noop */ } },
+};
+
+/* ═════════ Spring (apple-design: response + damping, 現在値と速度から再開できる) ═════════ */
+const springs = new Set();
+let raf = 0, lastTs = 0;
+function kick() { if (!raf) { lastTs = performance.now(); raf = requestAnimationFrame(tick); } }
+function tick(now) {
+  const dt = Math.min((now - lastTs) / 1000, 0.05);
+  lastTs = now;
+  let live = false;
+  for (const s of springs) { if (s.active) { s.step(dt); if (s.active) live = true; } }
+  raf = live ? requestAnimationFrame(tick) : 0;
+}
+class Spring {
+  constructor(value, { response = 0.4, damping = 1, eps = 0.001, onUpdate, onRest } = {}) {
+    Object.assign(this, { value, target: value, vel: 0, response, damping, eps, onUpdate, onRest, active: false });
+    springs.add(this);
+  }
+  to(target) { this.target = target; this.active = true; kick(); }
+  jump(v) { this.value = v; this.target = v; this.vel = 0; this.active = false; this.onUpdate?.(v); }
+  step(dt) {
+    const r = reduce.matches ? Math.min(this.response, 0.15) : this.response;
+    const w = (2 * Math.PI) / r, k = w * w, c = 2 * this.damping * w;
+    const n = Math.max(1, Math.ceil(dt * 240)), h = dt / n;
+    for (let i = 0; i < n; i++) {
+      this.vel += (-k * (this.value - this.target) - c * this.vel) * h;
+      this.value += this.vel * h;
+    }
+    if (Math.abs(this.target - this.value) < this.eps && Math.abs(this.vel) < this.eps * 20) {
+      this.value = this.target; this.vel = 0; this.active = false;
+      this.onUpdate?.(this.value); this.onRest?.();
+    } else {
+      this.onUpdate?.(this.value);
+    }
+  }
+}
+
+/* ═════════ Odometer (連続値 → 桁ごとのリール) ═════════ */
+const fig = $("#figure");
+const heroFit = $("#heroFit");
+const CELL = 0.56, COMMA = 0.3, LH = 1.2;
+let cells = [], nDigits = 0, placeholder = true;
+
+function fit() {
+  const em = parseFloat(fig.dataset.em) || 4.8;
+  const w = heroFit.clientWidth;
+  fig.style.fontSize = clamp(w / em, 40, 192) + "px";
+}
+function layout(n, ph) {
+  fig.textContent = ""; cells = []; nDigits = n; placeholder = ph;
+  let em = 0;
+  for (let p = n - 1; p >= 0; p--) {
+    const d = document.createElement("span");
+    d.className = "d" + (ph ? " ph" : "");
+    d.setAttribute("aria-hidden", "true");
+    if (ph) {
+      d.textContent = "–";
+    } else {
+      const reel = document.createElement("span");
+      reel.className = "reel";
+      for (let k = 0; k <= 10; k++) { const i = document.createElement("i"); i.textContent = String(k % 10); reel.appendChild(i); }
+      d.appendChild(reel);
+      cells.push({ p, d, reel });
+    }
+    fig.appendChild(d); em += CELL;
+    if (p > 0 && p % 3 === 0) {
+      const c = document.createElement("span");
+      c.className = "c"; c.textContent = ","; c.setAttribute("aria-hidden", "true");
+      fig.appendChild(c); em += COMMA;
+    }
+  }
+  fig.dataset.em = String(em);
+  fit();
+}
+function paint(v) {
+  if (placeholder) return;
+  const digitsNow = String(Math.floor(v + 1e-6)).length;
+  for (const { p, d, reel } of cells) {
+    let pos;
+    if (p === 0) {
+      pos = ((v % 10) + 10) % 10;
+    } else {
+      const x = v / Math.pow(10, p), base = Math.floor(x), f = x - base;
+      pos = (base % 10) + clamp((f - 0.9) / 0.1, 0, 1);   // 下の桁が 9→0 に回る間だけ繰り上がる
+    }
+    reel.style.transform = "translate3d(0," + (-pos * LH).toFixed(4) + "em,0)";
+    d.classList.toggle("is-lead", p >= digitsNow);
+  }
+}
+const odo = new Spring(0, { response: 0.7, eps: 0.004, onUpdate: paint });
+
+function setCount(target, first) {
+  const need = String(Math.max(0, Math.floor(target))).length;
+  const rebuild = placeholder || need !== nDigits;
+  const wasPlaceholder = placeholder;
+  if (rebuild) layout(need, false);
+  if (first || wasPlaceholder) {
+    odo.jump(0);
+    if (reduce.matches) odo.jump(target);
+    else {
+      // 初回のカウントアップ: 桁数が大きいので、残り1以内で着地させて約1.5秒に収める
+      odo.response = 0.55; odo.eps = 1;
+      odo.onRest = () => { odo.eps = 0.004; odo.onRest = null; };
+      odo.to(target);
+    }
+  } else {
+    odo.response = 0.6; odo.to(target); paint(odo.value);
+  }
+  fig.setAttribute("aria-label", "再生回数は " + nf.format(target) + " 回");
+}
+function setPlaceholder() {
+  odo.jump(0);
+  layout(7, true);
+  fig.setAttribute("aria-label", "再生回数は未取得です");
+}
+new ResizeObserver(() => { fit(); drawTrace(); }).observe(heroFit);
+
+/* ═════════ State ═════════ */
+const S = {
+  key: "", interval: CONFIG.INTERVAL_SEC, remember: true,
+  samples: [], last: null, firstSample: null,
+  status: "idle", busy: false, timer: 0, retries: 0,
+};
+
+const el = {
+  chip: $("#chip"), chipText: $("#chipText"), dot: $("#dot"), updated: $("#updated"),
+  tail: $("#tail"), qual: $("#qual"), cta: $("#cta"), ctaBtn: $("#ctaBtn"),
+  notice: $("#notice"), noticeText: $("#noticeText"), noticeActions: $("#noticeActions"),
+  refresh: $("#refreshBtn"), settings: $("#settingsBtn"), bar: $("#bar"),
+  sDelta: $("#sDelta"), sDeltaN: $("#sDeltaN"), sPace: $("#sPace"), sPaceN: $("#sPaceN"),
+  sSession: $("#sSession"), sLikes: $("#sLikes"), sComments: $("#sComments"),
+  trace: $("#trace"), traceEmpty: $("#traceEmpty"), traceCap: $("#traceCap"),
+  thumbBox: $("#thumbBox"), vTitle: $("#vTitle"), vMeta: $("#vMeta"), vLink: $("#vLink"),
+  footL: $("#footL"),
+};
+el.vLink.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(CONFIG.VIDEO_ID);
+
+const STATUS_TEXT = { idle: "未設定", loading: "取得中", live: "LIVE", retry: "再試行中", paused: "停止中", demo: "DEMO" };
+function setStatus(st) {
+  S.status = st;
+  el.chip.dataset.status = st;
+  el.chipText.textContent = STATUS_TEXT[st];
+  renderTail();
+  el.cta.hidden = st !== "idle";
+}
+function renderTail() {
+  const t = {
+    idle: "APIキーを設定すると、ここに再生回数が表示されます。",
+    loading: "再生回数を取得しています…",
+  }[S.status];
+  if (S.last) el.tail.textContent = "回、再生されています。";
+  else el.tail.textContent = t || "再生回数を取得できていません。";
+}
+function setBusy(b) {
+  S.busy = b;
+  el.refresh.disabled = b;
+  el.refresh.dataset.state = b ? "loading" : (S.status === "retry" || S.status === "paused" ? "error" : "default");
+}
+function pulse(node) {
+  if (reduce.matches || !node.animate) return;
+  node.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(2.2)", opacity: 0.5 }, { transform: "scale(1)", opacity: 1 }], { duration: 520, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+}
+
+/* ═════════ YouTube Data API ═════════ */
+async function fetchStats(key) {
+  const url = new URL("https://www.googleapis.com/youtube/v3/videos");
+  url.search = new URLSearchParams({ part: "snippet,statistics", id: CONFIG.VIDEO_ID, key }).toString();
+  let res;
+  try { res = await fetch(url, { cache: "no-store" }); }
+  catch { throw { kind: "network" }; }
+  const json = await res.json().catch(() => null);
+  if (!res.ok) {
+    const e = json && json.error;
+    const reason = (e && e.errors && e.errors[0] && e.errors[0].reason) || (e && e.details && (e.details.find((d) => d.reason) || {}).reason) || (e && e.status) || "";
+    throw { kind: "api", status: res.status, reason, message: e && e.message };
+  }
+  const item = json && json.items && json.items[0];
+  if (!item) throw { kind: "notfound" };
+  const st = item.statistics || {}, sn = item.snippet || {};
+  const th = sn.thumbnails || {};
+  const num = (x) => (x === undefined ? null : Number(x));
+  return {
+    views: Number(st.viewCount), likes: num(st.likeCount), comments: num(st.commentCount),
+    title: sn.title || "", channel: sn.channelTitle || "", publishedAt: sn.publishedAt || "",
+    thumb: (th.medium || th.high || th.default || {}).url || "",
+  };
+}
+let demoBase = 1000000;
+async function demoFetch() {
+  await new Promise((r) => setTimeout(r, 350));
+  demoBase += Math.floor(Math.random() * 60);
+  return { views: demoBase, likes: Math.floor(demoBase / 40), comments: Math.floor(demoBase / 900), title: "デモ表示（実際のデータではありません）", channel: "DEMO", publishedAt: "", thumb: "" };
+}
+
+function explain(err) {
+  const r = String(err.reason || "");
+  if (err.kind === "network") return { fatal: false, message: "ネットワークに接続できません。つながり次第、自動で再試行します。", actions: ["retry"] };
+  if (err.kind === "notfound") return { fatal: true, message: "この動画が見つかりません。非公開、または削除された可能性があります。", actions: ["retry"] };
+  if (/keyInvalid|API_KEY_INVALID/i.test(r)) return { fatal: true, message: "APIキーが正しくありません。コピー漏れや余分な文字がないか確認してください。", actions: ["settings"] };
+  if (/referer|API_KEY_HTTP_REFERRER_BLOCKED|ipRefererBlocked/i.test(r)) return { fatal: true, message: "キーの HTTP リファラ制限で拒否されました。ファイルを直接開く場合は、リファラ制限のないキー(API の制限のみ)を使ってください。", actions: ["settings"] };
+  if (/quotaExceeded|dailyLimitExceeded|rateLimitExceeded|userRateLimitExceeded/i.test(r)) return { fatal: true, autoRetryMin: 10, message: "本日の無料枠(クォータ)を使い切りました。太平洋時間の0時、日本時間の16時または17時ごろにリセットされます。10分ごとに自動で再確認します。", actions: ["retry"] };
+  if (/accessNotConfigured|SERVICE_DISABLED/i.test(r) || err.status === 403) return { fatal: true, message: "このキーでは YouTube Data API v3 を使えません。Google Cloud Console で API が有効になっているか確認してください。", actions: ["settings"] };
+  if (err.status >= 500) return { fatal: false, message: "YouTube 側で一時的なエラーが出ています。自動で再試行します。", actions: ["retry"] };
+  return { fatal: false, message: "取得に失敗しました" + (err.message ? "(" + err.message + ")" : "") + "。自動で再試行します。", actions: ["retry", "settings"] };
+}
+
+/* ═════════ Polling ═════════ */
+let barAnim = null;
+function runBar(ms) {
+  stopBar();
+  if (!el.bar.animate) return;
+  barAnim = el.bar.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: ms, easing: "linear", fill: "forwards" });
+}
+function stopBar() { if (barAnim) { barAnim.cancel(); barAnim = null; } }
+function schedule(ms) {
+  clearTimeout(S.timer); S.timer = 0;
+  if (document.hidden) { stopBar(); return; }
+  S.timer = setTimeout(poll, ms);
+  runBar(ms);
+}
+async function poll() {
+  clearTimeout(S.timer); S.timer = 0;
+  if (!DEMO && !S.key) { setStatus("idle"); stopBar(); return; }
+  if (S.busy) return;
+  setBusy(true);
+  stopBar();
+  if (!S.last) setStatus("loading");
+  try {
+    const data = DEMO ? await demoFetch() : await fetchStats(S.key);
+    S.retries = 0;
+    applyData(data);
+    setStatus(DEMO ? "demo" : "live");
+    setNotice(null);
+    schedule(S.interval * 1000);
+  } catch (err) {
+    const info = explain(err);
+    if (info.fatal) {
+      setStatus("paused");
+      stopBar();
+      if (info.autoRetryMin) schedule(info.autoRetryMin * 60000);
+    } else {
+      S.retries++;
+      setStatus("retry");
+      schedule(Math.min(S.interval, 5 * Math.pow(2, Math.min(S.retries - 1, 4))) * 1000);
+    }
+    setNotice(info);
+  } finally {
+    setBusy(false);
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { clearTimeout(S.timer); S.timer = 0; stopBar(); return; }
+  if (!DEMO && !S.key) return;
+  if (S.status === "paused") return;
+  const age = S.last ? Date.now() - S.last.t : Infinity;
+  if (age >= S.interval * 1000) poll(); else schedule(S.interval * 1000 - age);
+});
+
+/* ═════════ Render ═════════ */
+const signed = (n) => (n > 0 ? "+" + nf.format(n) : n < 0 ? "−" + nf.format(-n) : "0");
+function nextMilestone(v) {
+  if (v < 1000) return 1000;
+  const step = Math.pow(10, Math.floor(Math.log10(v))) / 2;
+  return (Math.floor(v / step) + 1) * step;
+}
+function pacePerMin() {
+  const s = S.samples;
+  if (s.length < 2) return null;
+  const b = s[s.length - 1];
+  const win = s.filter((x) => x.t >= b.t - 10 * 60000);
+  const a = win[0];
+  const mins = (b.t - a.t) / 60000;
+  if (win.length < 2 || mins < 0.75) return null;
+  return (b.v - a.v) / mins;
+}
+function fmtEta(mins) {
+  if (mins < 60) return "約" + Math.max(1, Math.round(mins)) + "分後";
+  if (mins < 48 * 60) return "約" + Math.floor(mins / 60) + "時間" + Math.round(mins % 60) + "分後";
+  return "約" + Math.round(mins / 1440) + "日後";
+}
+function applyData(d) {
+  const now = Date.now();
+  const prev = S.samples[S.samples.length - 1] || null;
+  const first = !S.last;
+  S.samples.push({ t: now, v: d.views });
+  if (S.samples.length > 300) S.samples.shift();
+  if (!S.firstSample) S.firstSample = { t: now, v: d.views };
+  S.last = { t: now, ...d };
+  setCount(d.views, first);
+  document.title = nf.format(d.views) + " 回 · INMU KING カウンター";
+  el.updated.textContent = "最終更新 " + fmtTime(now);
+  if (prev && prev.v !== d.views) pulse(el.dot);
+
+  // 補助の数字
+  if (prev) {
+    const diff = d.views - prev.v;
+    el.sDelta.textContent = signed(diff);
+    el.sDelta.classList.toggle("pos", diff > 0);
+    el.sDeltaN.textContent = fmtTime(prev.t) + " の取得値との差";
+  }
+  const p = pacePerMin();
+  if (p === null) { el.sPace.textContent = "—"; el.sPaceN.textContent = "2回目の取得から計測"; }
+  else {
+    const r = Math.abs(p) < 10 ? Math.round(p * 10) / 10 : Math.round(p);
+    el.sPace.textContent = (r > 0 ? "+" : r < 0 ? "−" : "") + nf.format(Math.abs(r));
+    el.sPace.classList.toggle("pos", r > 0);
+    el.sPaceN.textContent = "直近10分以内の取得値から算出";
+  }
+  const sess = d.views - S.firstSample.v;
+  el.sSession.textContent = signed(sess);
+  el.sSession.classList.toggle("pos", sess > 0);
+  el.sLikes.textContent = d.likes === null ? "非公開" : nf.format(d.likes);
+  el.sComments.textContent = d.comments === null ? "非公開" : nf.format(d.comments);
+
+  // 次の節目
+  const m = nextMilestone(d.views);
+  let q = '次の節目 <b>' + nf.format(m) + '</b> まで あと <b>' + nf.format(m - d.views) + '</b>';
+  if (p !== null && p > 0) q += ' <span>· いまのペースなら ' + fmtEta((m - d.views) / p) + '</span>';
+  el.qual.innerHTML = q;
+  el.qual.hidden = false;
+
+  renderVideo(d);
+  drawTrace();
+}
+function renderVideo(d) {
+  el.vTitle.textContent = d.title || "（タイトル未取得）";
+  let meta = d.channel || "";
+  if (d.publishedAt) {
+    const t = new Date(d.publishedAt), ms = Date.now() - t.getTime();
+    const days = Math.floor(ms / 86400000), hrs = Math.floor((ms % 86400000) / 3600000);
+    meta += (meta ? " · " : "") + t.toLocaleString("ja-JP", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 公開（" + (days > 0 ? days + "日" : "") + hrs + "時間前）";
+  }
+  el.vMeta.textContent = meta;
+  if (d.thumb && !el.thumbBox.querySelector("img")) {
+    const img = document.createElement("img");
+    img.src = d.thumb; img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+    el.thumbBox.className = ""; el.thumbBox.textContent = ""; el.thumbBox.appendChild(img);
+  }
+}
+function setNotice(info) {
+  if (!info) { el.notice.hidden = true; return; }
+  el.notice.dataset.kind = info.fatal ? "error" : "warn";
+  el.noticeText.textContent = info.message;
+  el.noticeActions.textContent = "";
+  for (const a of info.actions || []) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn " + (a === "settings" ? "btn-primary" : "btn-quiet");
+    b.textContent = a === "settings" ? "設定を開く" : "もう一度試す";
+    b.addEventListener("click", () => (a === "settings" ? openSheet(b) : poll()));
+    el.noticeActions.appendChild(b);
+  }
+  el.notice.hidden = false;
+}
+
+/* ═════════ 推移グラフ(取得できた値だけを段階状に描く) ═════════ */
+const SVGNS = "http://www.w3.org/2000/svg";
+function drawTrace() {
+  const s = S.samples;
+  const enough = s.length >= 2;
+  el.traceEmpty.hidden = enough;
+  el.trace.hidden = !enough;
+  el.traceCap.hidden = !enough;
+  if (!enough) return;
+  const W = el.trace.clientWidth || 600, H = el.trace.clientHeight || 112, pad = 8;
+  const t0 = s[0].t, t1 = s[s.length - 1].t;
+  const vs = s.map((x) => x.v), min = Math.min(...vs), max = Math.max(...vs);
+  const X = (t) => pad + ((t - t0) / (t1 - t0 || 1)) * (W - 2 * pad);
+  const Y = (v) => (max === min ? H / 2 : H - pad - ((v - min) / (max - min)) * (H - 2 * pad));
+  let d = "M" + X(s[0].t).toFixed(1) + " " + Y(s[0].v).toFixed(1);
+  for (let i = 1; i < s.length; i++) d += " L" + X(s[i].t).toFixed(1) + " " + Y(s[i - 1].v).toFixed(1) + " L" + X(s[i].t).toFixed(1) + " " + Y(s[i].v).toFixed(1);
+  const last = s[s.length - 1];
+  el.trace.setAttribute("viewBox", "0 0 " + W + " " + H);
+  el.trace.innerHTML =
+    '<line class="trace-base" x1="0" x2="' + W + '" y1="' + (H - 0.5) + '" y2="' + (H - 0.5) + '"/>' +
+    '<path class="trace-line" d="' + d + '"/>' +
+    '<circle class="trace-dot" cx="' + X(last.t).toFixed(1) + '" cy="' + Y(last.v).toFixed(1) + '" r="4"/>';
+  el.traceCap.innerHTML = "<span>" + fmtTime(t0) + " から " + s.length + " 回の取得</span><span>最小 " + nf.format(min) + " / 最大 " + nf.format(max) + "</span>";
+}
+
+/* ═════════ Settings sheet ═════════ */
+const root = $("#sheetRoot"), sheet = $("#sheet"), head = $("#sheetHead"), app = $("#app");
+const keyInput = $("#keyInput"), eyeBtn = $("#eyeBtn"), rememberChk = $("#rememberChk");
+const saveBtn = $("#saveBtn"), clearBtn = $("#clearBtn"), formMsg = $("#formMsg"), keyHelp = $("#keyHelp"), quotaHelp = $("#quotaHelp");
+const intervalInput = $("#intervalInput");
+const KEY_HELP = "Google Cloud Console で YouTube Data API v3 を有効にして発行したキーを貼り付けます。";
+let sheetTrigger = null, sheetOpen = false;
+
+const sheetP = new Spring(0, {
+  response: 0.4, eps: 0.002,
+  onUpdate: (v) => root.style.setProperty("--p", v.toFixed(4)),
+  onRest: () => { if (!sheetOpen && sheetP.target === 0) { root.hidden = true; app.inert = false; (sheetTrigger || el.settings).focus({ preventScroll: true }); } },
+});
+const dySp = new Spring(0, { response: 0.35, eps: 0.3, onUpdate: (v) => root.style.setProperty("--dy", v.toFixed(2)) });
+
+function currentInterval() {
+  const raw = intervalInput.value.trim();
+  const n = /^\d+$/.test(raw) ? Number(raw) : NaN;
+  return validSec(n) ? n : NaN;
+}
+function updateQuota() {
+  const sec = currentInterval();
+  const bad = Number.isNaN(sec);
+  intervalInput.setAttribute("aria-invalid", bad ? "true" : "false");
+  document.querySelectorAll(".pre").forEach((b) => b.setAttribute("aria-pressed", String(!bad && Number(b.dataset.sec) === sec)));
+  quotaHelp.classList.remove("err", "warn");
+  if (bad) { quotaHelp.textContent = MIN_SEC + "〜" + nf.format(MAX_SEC) + " の整数(秒)で指定してください。"; quotaHelp.classList.add("err"); return; }
+  const perDay = Math.round(86400 / sec);
+  let t = "開きっぱなしで 1日あたり約 " + nf.format(perDay) + " ユニットを使います(無料枠の標準は 1日 10,000)。タブを隠している間は取得を止めます。";
+  if (perDay > 10000) { t = "この間隔だと 1日あたり約 " + nf.format(perDay) + " ユニットで、無料枠の標準(1日 10,000)を超えます。途中で取得が止まる可能性があります。"; quotaHelp.classList.add("warn"); }
+  quotaHelp.textContent = t;
+}
+function fillForm() {
+  keyInput.value = "";
+  keyInput.type = "password"; eyeBtn.setAttribute("aria-pressed", "false"); eyeBtn.setAttribute("aria-label", "キーを表示");
+  $("#eyeOn").hidden = false; $("#eyeOff").hidden = true;
+  keyInput.placeholder = S.key ? "設定済み(末尾 " + S.key.slice(-4) + ")— 変えるときだけ入力" : "AIza…";
+  rememberChk.checked = S.remember;
+  intervalInput.value = String(S.interval);
+  setFieldError("");
+  setSaveState("default");
+  formMsg.hidden = true;
+  updateQuota();
+}
+function openSheet(trigger) {
+  sheetTrigger = trigger || el.settings;
+  fillForm();
+  root.hidden = false; app.inert = true; sheetOpen = true;
+  sheetP.to(1);
+  requestAnimationFrame(() => keyInput.focus({ preventScroll: true }));
+}
+function closeSheet() {
+  if (!sheetOpen) return;
+  sheetOpen = false;
+  sheetP.to(0);
+}
+function setFieldError(msg) {
+  keyInput.setAttribute("aria-invalid", msg ? "true" : "false");
+  keyHelp.textContent = msg || KEY_HELP;
+  keyHelp.classList.toggle("err", !!msg);
+}
+function setSaveState(st) {
+  saveBtn.dataset.state = st;
+  saveBtn.disabled = st === "loading";
+  saveBtn.innerHTML = {
+    default: "保存して開始",
+    loading: '<svg class="i spin" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>確認中',
+    error: "もう一度試す",
+    success: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>接続しました',
+  }[st];
+}
+
+$("#settingsBtn").addEventListener("click", (e) => openSheet(e.currentTarget));
+el.ctaBtn.addEventListener("click", (e) => openSheet(e.currentTarget));
+$("#closeBtn").addEventListener("click", closeSheet);
+$("#scrim").addEventListener("click", closeSheet);
+el.refresh.addEventListener("click", () => poll());
+intervalInput.addEventListener("input", () => { updateQuota(); if (saveBtn.dataset.state === "error") setSaveState("default"); });
+document.querySelectorAll(".pre").forEach((b) => b.addEventListener("click", () => { intervalInput.value = b.dataset.sec; updateQuota(); }));
+eyeBtn.addEventListener("click", () => {
+  const show = keyInput.type === "password";
+  keyInput.type = show ? "text" : "password";
+  eyeBtn.setAttribute("aria-pressed", String(show));
+  eyeBtn.setAttribute("aria-label", show ? "キーを隠す" : "キーを表示");
+  $("#eyeOn").hidden = show; $("#eyeOff").hidden = !show;
+});
+keyInput.addEventListener("input", () => { if (keyInput.getAttribute("aria-invalid") === "true") setFieldError(""); if (saveBtn.dataset.state === "error") setSaveState("default"); });
+
+$("#form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (saveBtn.dataset.state === "loading") return;
+  const typed = keyInput.value.trim();
+  const sec = currentInterval();
+  const remember = rememberChk.checked;
+  if (Number.isNaN(sec)) { updateQuota(); setSaveState("error"); intervalInput.focus(); return; }
+
+  if (!typed) {
+    // キー入力なし: 設定済みなら取得間隔・保存設定だけ更新する
+    if (!S.key && !DEMO) { setFieldError("APIキーを貼り付けてください。"); setSaveState("error"); keyInput.focus(); return; }
+    S.interval = sec; S.remember = remember;
+    store.set("interval", String(sec)); store.set("remember", remember ? "1" : "0");
+    if (!remember) store.del("apiKey"); else if (S.key && S.key !== CONFIG.API_KEY) store.set("apiKey", S.key);
+    closeSheet();
+    if (S.last && S.status !== "paused") schedule(Math.max(0, S.interval * 1000 - (Date.now() - S.last.t))); else poll();
+    return;
+  }
+  if (/\s/.test(typed)) { setFieldError("キーに空白や改行が含まれています。貼り付けをやり直してください。"); setSaveState("error"); keyInput.focus(); return; }
+
+  setFieldError(""); setSaveState("loading");
+  try {
+    const data = await fetchStats(typed);
+    S.key = typed; S.interval = sec; S.remember = remember;
+    store.set("interval", String(sec)); store.set("remember", remember ? "1" : "0");
+    if (remember) store.set("apiKey", typed); else store.del("apiKey");
+    setSaveState("success");
+    S.retries = 0;
+    applyData(data); setStatus("live"); setNotice(null); schedule(S.interval * 1000);
+    setTimeout(() => { closeSheet(); }, 650);
+  } catch (err) {
+    const info = explain(err);
+    setSaveState("error");
+    setFieldError(info.message);
+    keyInput.focus();
+  }
+});
+clearBtn.addEventListener("click", () => {
+  store.del("apiKey");
+  S.key = CONFIG.API_KEY;
+  keyInput.value = "";
+  formMsg.hidden = false;
+  if (S.key) { formMsg.textContent = "保存済みのキーを削除しました。ファイル内の CONFIG.API_KEY を使います。"; poll(); }
+  else {
+    formMsg.textContent = "保存済みのキーを削除しました。";
+    clearTimeout(S.timer); stopBar();
+    S.samples = []; S.last = null; S.firstSample = null;
+    setPlaceholder(); setStatus("idle"); setNotice(null);
+    el.qual.hidden = true; el.updated.textContent = ""; document.title = "INMU KING カウンター";
+    ["sDelta", "sPace", "sSession", "sLikes", "sComments"].forEach((k) => { el[k].textContent = "—"; el[k].classList.remove("pos"); });
+    drawTrace();
+  }
+  keyInput.placeholder = S.key ? "設定済み(末尾 " + S.key.slice(-4) + ")— 変えるときだけ入力" : "AIza…";
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!sheetOpen) return;
+  if (e.key === "Escape") { e.preventDefault(); closeSheet(); return; }
+  if (e.key !== "Tab") return;
+  const f = [...sheet.querySelectorAll('button:not([disabled]), input:not([disabled]), [href]')].filter((n) => n.offsetParent !== null || n === document.activeElement);
+  if (!f.length) return;
+  const first = f[0], lastEl = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
+  else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+});
+
+/* ── 下へドラッグで閉じる(モバイルのボトムシート): 1:1追従 → 勢いを投影 → 速度を引き継いで着地 ── */
+const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+const project = (v, d = 0.998) => ((v / 1000) * d) / (1 - d);
+let drag = null;
+head.addEventListener("pointerdown", (e) => {
+  if (!sheetOpen || !mobileSheet.matches || e.target.closest("button")) return;
+  head.setPointerCapture(e.pointerId);
+  dySp.active = false; dySp.vel = 0;
+  drag = { y0: e.clientY, dy0: dySp.value, H: sheet.offsetHeight || 1, hist: [{ t: e.timeStamp, y: e.clientY }] };
+});
+head.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const raw = drag.dy0 + (e.clientY - drag.y0);
+  dySp.jump(raw >= 0 ? raw : -rubber(-raw, drag.H));
+  drag.hist.push({ t: e.timeStamp, y: e.clientY });
+  while (drag.hist.length > 2 && e.timeStamp - drag.hist[0].t > 100) drag.hist.shift();
+});
+function release() {
+  if (!drag) return;
+  const h = drag.hist, a = h[0], b = h[h.length - 1];
+  const v = b.t > a.t ? ((b.y - a.y) / (b.t - a.t)) * 1000 : 0;   // px/s
+  const dy = dySp.value, H = drag.H;
+  drag = null;
+  if (dy > 0 && (dy + project(v) > H * 0.5 || v > 900)) {
+    // 閉じる: ずれ(dy)を進行度 p に畳み込み、指の速度をそのまま引き継ぐ
+    sheetOpen = false;
+    sheetP.value = 1 - dy / H; sheetP.vel = -v / H;
+    dySp.jump(0);
+    sheetP.to(0);
+  } else {
+    dySp.vel = v; dySp.damping = Math.abs(v) > 300 ? 0.8 : 1;   // 勢いがあるときだけ軽く弾む
+    dySp.to(0);
+  }
+}
+head.addEventListener("pointerup", release);
+head.addEventListener("pointercancel", release);
+
+/* ═════════ Boot ═════════ */
+function boot() {
+  const iv = Number(store.get("interval"));
+  S.interval = validSec(iv) ? iv : (validSec(CONFIG.INTERVAL_SEC) ? CONFIG.INTERVAL_SEC : 20);
+  S.remember = store.get("remember") !== "0";
+  S.key = (store.get("apiKey") || CONFIG.API_KEY || "").trim();
+  setPlaceholder();
+  if (DEMO) { el.footL.textContent = "デモ表示中です。数字は実際のデータではありません。"; }
+  setStatus(DEMO || S.key ? "loading" : "idle");
+  if (DEMO || S.key) poll();
+}
+boot();
+})();
+</script>
+</body>
+</html>
